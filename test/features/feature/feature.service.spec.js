@@ -1,6 +1,7 @@
-const { assert } = require("sinon");
-const rewire = require("rewire");
-const { expect } = require("chai");// імпорт бібліотек для тестування
+const { assert } = require("sinon"),
+ rewire = require("rewire"),
+ { expect } = require("chai"),
+ mockDate = require("mockdate");// імпорт бібліотек для тестування
 
 const { err } = require("../../../src/constants/errors");// імпорт констант і потрібних змінних
 
@@ -11,6 +12,7 @@ const {
 const { UserStub } = require("../../common/models");// імпорт заглушок
 const { setBirthYearStub } = require("../../common/services/feature.service");// імпорт заглушок
 const { setIllSpy } = require("../../common/helpers/feature.helper");// імпорт шпигунів
+const { getCurrentYearSpy } = require("../../common/utils/date");// імпорт шпигунів
 
 describe("features > feature > feature.service", () => {// шлях до файлу
   let SUT;// оголошуємо Subject Under Tests
@@ -18,8 +20,9 @@ describe("features > feature > feature.service", () => {// шлях до фай�
     SUT = rewire("../../../src/features/feature/feature.service");// назначаємо Subject Under Tests для кожного окремого тесту
   });
   // тут ставимо змінні спільні для тестування всіх методів модулю
+  const id = 1;
   describe("method2", () => {// назва методу, що тестується
-    const id = 1;// змінні, спільні для тестування конкретного методу
+    // змінні, спільні для тестування конкретного методу
     it("should throw error if no user found", async () => {
       const User = UserStub({});// викликаємо методи й передаємо в них дані, які очікуємо
       const setBirthYear = setBirthYearStub({});
@@ -190,6 +193,67 @@ describe("features > feature > feature.service", () => {// шлях до фай�
       secondCall.calledWith(users[1], ill);
 
       expect(result).to.deep.equal(expectResult);
+    });
+  });
+  describe("setBirthYear", () => {
+    let setBirthYear;// оголошуємо приватний метод модулю, який треба тестувати, але він не експортований
+    let getCurrentYear;// оголошуємо шпигунів для хелперів
+    before(() => mockDate.set("2000-11-22"));// оголошуємо замокану дату
+    after(() => mockDate.reset());// скидаємо замокану дату
+    beforeEach(() => {
+      setBirthYear = SUT.__get__("setBirthYear");// дістаємо приватний метод модулю для кожного тесту
+      getCurrentYear = getCurrentYearSpy();// назначаємо шпигунів перед кожним окремим тестом
+    });
+    afterEach(() => {
+      getCurrentYear.restore();// скидаємо шпигунів після тесту, щоб результати виклику не сумувалися
+    });
+    const user = {
+      id,
+      name: "Test",
+      age: 25
+    };
+    it("should return user object with calculated birthday", async () => {
+      const date = new Date();// оголошуємо ТІЛЬКИ всередині it, інакше не підтягне замокану дату
+      const birthYear = 1975;
+      const birthYearFromDB = 1975;
+      const expectedResult = { ...user, birthYear }
+
+      const User = UserStub({ birthYearFromDB });
+
+      SUT.__set__({ User });
+
+      const result = await mockTransaction((transaction) => {
+        return setBirthYear(user)(transaction);
+      });
+
+      assert.calledOnce(getCurrentYear);
+      assert.calledWith(getCurrentYear, date);
+
+      assert.calledOnce(User.getBirthYear);
+      assert.calledWith(User.getBirthYear, user.id);
+
+      expect(result).to.deep.equal(expectedResult);
+    });
+    it("should return user object with birthday from DB", async () => {
+      const date = new Date();
+      const birthYearFromDB = 1999;
+      const expectedResult = { ...user, birthYear: birthYearFromDB }
+
+      const User = UserStub({ birthYearFromDB });
+
+      SUT.__set__({ User });
+
+      const result = await mockTransaction((transaction) => {
+        return setBirthYear(user)(transaction);
+      });
+
+      assert.calledOnce(getCurrentYear);
+      assert.calledWith(getCurrentYear, date);
+
+      assert.calledOnce(User.getBirthYear);
+      assert.calledWith(User.getBirthYear, user.id);
+
+      expect(result).to.deep.equal(expectedResult);
     });
   });
 });

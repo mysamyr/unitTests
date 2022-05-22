@@ -6,7 +6,8 @@ const dateUtil = require("../../utils/date");
 module.exports.get = User.get;
 
 const setBirthYear = (user) => async (transaction) => {
-  const birthYear = dateUtil.getCurrentYear() - user.age;
+  const date = new Date();
+  const birthYear = dateUtil.getCurrentYear(date) - user.age;
   const birthYearFromDB = await User.getBirthYear(user.id)(transaction);
   return (birthYear === birthYearFromDB)
     ? { ...user, birthYear }

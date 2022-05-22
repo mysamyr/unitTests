@@ -1,3 +1,3 @@
 module.exports = {
-  err: "some err has happened"
+  err: "some err was happened"
 };

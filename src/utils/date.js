@@ -1,7 +1,6 @@
 
 module.exports = {
-  getCurrentYear: () => {
-    const date = new Date();
+  getCurrentYear: (date) => {
     return date.getFullYear();
   }
 };

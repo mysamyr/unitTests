@@ -1,6 +1,6 @@
-const { assert } = require("sinon");
-const rewire = require("rewire");
-const { expect } = require("chai");// імпорт бібліотек для тестування
+const { assert } = require("sinon"),
+  rewire = require("rewire"),
+  { expect } = require("chai");// імпорт бібліотек для тестування
 
 const { err } = require("../../../src/constants/errors");// імпорт констант і потрібних змінних
 
